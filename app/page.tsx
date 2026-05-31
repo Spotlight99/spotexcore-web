@@ -2,23 +2,49 @@
 
 import { useEffect, useRef, useState } from 'react'
 
+// Hook for scroll-triggered reveal
+function useScrollReveal() {
+  const [revealed, setRevealed] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute('data-reveal-id')
+            if (id) setRevealed(prev => new Set([...prev, id]))
+          }
+        })
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -60px 0px' }
+    )
+
+    const elements = document.querySelectorAll('[data-reveal-id]')
+    elements.forEach(el => observer.observe(el))
+    return () => observer.disconnect()
+  }, [])
+
+  return revealed
+}
+
 export default function Home() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const [scrollY, setScrollY] = useState(0)
   const heroRef = useRef<HTMLDivElement>(null)
+  const revealed = useScrollReveal()
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePos({ x: e.clientX, y: e.clientY })
-    }
+    const handleMouseMove = (e: MouseEvent) => setMousePos({ x: e.clientX, y: e.clientY })
     const handleScroll = () => setScrollY(window.scrollY)
     window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll, { passive: true })
     return () => {
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('scroll', handleScroll)
     }
   }, [])
+
+  const r = (id: string) => revealed.has(id)
 
   return (
     <>
@@ -60,8 +86,8 @@ export default function Home() {
           border-radius: 50%;
           pointer-events: none;
           z-index: 9999;
-          transition: transform 0.1s ease;
           mix-blend-mode: screen;
+          transition: transform 0.1s ease;
         }
         .cursor-ring {
           position: fixed;
@@ -70,7 +96,7 @@ export default function Home() {
           border-radius: 50%;
           pointer-events: none;
           z-index: 9998;
-          transition: transform 0.15s ease;
+          transition: left 0.12s ease, top 0.12s ease;
         }
 
         body::before {
@@ -85,15 +111,16 @@ export default function Home() {
 
         .ambient {
           position: fixed;
-          width: 600px; height: 600px;
+          width: 700px; height: 700px;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(124,58,237,0.06) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(124,58,237,0.055) 0%, transparent 70%);
           pointer-events: none;
           z-index: 0;
           transform: translate(-50%, -50%);
-          transition: left 0.4s ease, top 0.4s ease;
+          transition: left 0.5s ease, top 0.5s ease;
         }
 
+        /* ── NAV ── */
         nav {
           position: fixed;
           top: 0; left: 0; right: 0;
@@ -106,7 +133,7 @@ export default function Home() {
           transition: border-color 0.3s, background 0.3s;
         }
         nav.scrolled {
-          background: rgba(6,8,16,0.85);
+          background: rgba(6,8,16,0.88);
           backdrop-filter: blur(20px);
           border-color: var(--border);
         }
@@ -114,21 +141,47 @@ export default function Home() {
         .logo {
           display: flex;
           align-items: center;
-          gap: 0.75rem;
+          gap: 0.85rem;
           text-decoration: none;
         }
 
-        .s-mark { width: 36px; height: 36px; }
-        .s-mark svg { width: 100%; height: 100%; }
+        /* The S mark — matching the style from your exchange logo */
+        .s-mark {
+          position: relative;
+          width: 38px; height: 38px;
+          display: flex; align-items: center; justify-content: center;
+        }
 
         .logo-text {
           font-family: 'Syne', sans-serif;
           font-weight: 800;
-          font-size: 1.1rem;
-          letter-spacing: 0.08em;
+          font-size: 1.05rem;
+          letter-spacing: 0.1em;
           color: var(--text);
+          display: flex;
+          flex-direction: column;
+          line-height: 1;
+          gap: 1px;
         }
-        .logo-text span { color: var(--violet-l); }
+        .logo-text .logo-name { color: var(--text); }
+        .logo-text .logo-sub {
+          font-size: 0.55rem;
+          letter-spacing: 0.25em;
+          color: var(--muted);
+          font-weight: 400;
+          font-family: 'DM Mono', monospace;
+        }
+        /* Horizontal rules flanking sub-text — like your S Exchange logo */
+        .logo-text .logo-sub-wrap {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .logo-rule {
+          width: 14px; height: 1px;
+          background: var(--muted);
+          opacity: 0.5;
+        }
 
         .nav-links {
           display: flex;
@@ -138,8 +191,8 @@ export default function Home() {
         }
         .nav-links a {
           font-family: 'DM Mono', monospace;
-          font-size: 0.75rem;
-          letter-spacing: 0.1em;
+          font-size: 0.72rem;
+          letter-spacing: 0.12em;
           text-transform: uppercase;
           color: var(--muted);
           text-decoration: none;
@@ -147,9 +200,21 @@ export default function Home() {
         }
         .nav-links a:hover { color: var(--text); }
 
+        .nav-signin {
+          font-family: 'DM Mono', monospace;
+          font-size: 0.72rem;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: var(--muted);
+          text-decoration: none;
+          transition: color 0.2s;
+          margin-right: 1.5rem;
+        }
+        .nav-signin:hover { color: var(--text); }
+
         .nav-cta {
           font-family: 'DM Mono', monospace;
-          font-size: 0.75rem;
+          font-size: 0.72rem;
           letter-spacing: 0.1em;
           text-transform: uppercase;
           color: var(--violet-l);
@@ -160,11 +225,12 @@ export default function Home() {
           transition: all 0.2s;
         }
         .nav-cta:hover {
-          background: rgba(124,58,237,0.1);
+          background: rgba(124,58,237,0.12);
           border-color: var(--violet-l);
           color: #fff;
         }
 
+        /* ── HERO ── */
         .hero {
           position: relative;
           min-height: 100vh;
@@ -183,8 +249,8 @@ export default function Home() {
           position: absolute;
           inset: 0;
           background-image:
-            linear-gradient(rgba(124,58,237,0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(124,58,237,0.04) 1px, transparent 1px);
+            linear-gradient(rgba(124,58,237,0.035) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(124,58,237,0.035) 1px, transparent 1px);
           background-size: 60px 60px;
           mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
         }
@@ -218,7 +284,6 @@ export default function Home() {
           opacity: 0;
           animation: fadeUp 0.8s ease 0.4s forwards;
         }
-
         .hero-title .line-1 { display: block; color: var(--text); }
         .hero-title .line-2 {
           display: block;
@@ -260,14 +325,12 @@ export default function Home() {
           text-decoration: none;
           padding: 0.875rem 2rem;
           border-radius: 2px;
-          border: none;
           cursor: none;
-          position: relative;
-          overflow: hidden;
           transition: all 0.3s;
           display: inline-block;
+          box-shadow: 0 0 20px rgba(168,85,247,0.5);
         }
-        .btn-primary:hover { background: var(--violet-l); transform: translateY(-1px); }
+        .btn-primary:hover { background: var(--violet-l); transform: translateY(-1px); box-shadow: 0 0 30px rgba(168,85,247,0.8); }
 
         .btn-ghost {
           color: var(--muted);
@@ -282,20 +345,17 @@ export default function Home() {
           transition: all 0.3s;
           cursor: none;
           display: inline-block;
+          box-shadow: 0 0 15px rgba(139,92,246,0.3);
         }
-        .btn-ghost:hover {
-          color: var(--text);
-          border-color: rgba(139,92,246,0.3);
-        }
+        .btn-ghost:hover { color: var(--text); border-color: rgba(139,92,246,0.3); box-shadow: 0 0 25px rgba(168,85,247,0.6); }
 
         .ticker {
           margin-top: 5rem;
           width: 100%;
-          max-width: 800px;
+          max-width: 820px;
           opacity: 0;
           animation: fadeUp 0.8s ease 1s forwards;
         }
-
         .ticker-label {
           font-family: 'DM Mono', monospace;
           font-size: 0.65rem;
@@ -305,7 +365,6 @@ export default function Home() {
           margin-bottom: 0.75rem;
           text-align: left;
         }
-
         .ticker-card {
           background: var(--glass);
           border: 1px solid var(--border);
@@ -325,12 +384,7 @@ export default function Home() {
           height: 1px;
           background: linear-gradient(90deg, transparent, var(--violet), transparent);
         }
-
-        .ticker-item {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-        }
+        .ticker-item { display: flex; align-items: center; gap: 0.75rem; }
         .ticker-dot {
           width: 6px; height: 6px;
           border-radius: 50%;
@@ -338,13 +392,7 @@ export default function Home() {
         }
         .ticker-dot.bullish { background: var(--green); }
         .ticker-dot.bearish { background: var(--red); }
-
-        .ticker-symbol {
-          font-family: 'DM Mono', monospace;
-          font-size: 0.8rem;
-          font-weight: 500;
-          color: var(--text);
-        }
+        .ticker-symbol { font-family: 'DM Mono', monospace; font-size: 0.8rem; font-weight: 500; color: var(--text); }
         .ticker-tf {
           font-family: 'DM Mono', monospace;
           font-size: 0.65rem;
@@ -353,19 +401,16 @@ export default function Home() {
           padding: 0.15rem 0.4rem;
           border-radius: 2px;
         }
-        .ticker-type {
-          font-family: 'DM Mono', monospace;
-          font-size: 0.7rem;
-          letter-spacing: 0.08em;
-        }
+        .ticker-type { font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.08em; }
         .ticker-type.bullish { color: var(--green); }
         .ticker-type.bearish { color: var(--red); }
 
+        /* ── STATS — 4 columns ── */
         .stats {
           position: relative;
           z-index: 2;
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(4, 1fr);
           gap: 1px;
           background: var(--border);
           border-top: 1px solid var(--border);
@@ -376,7 +421,9 @@ export default function Home() {
           background: var(--bg);
           padding: 3rem 2rem;
           text-align: center;
+          transition: background 0.3s;
         }
+        .stat:hover { background: rgba(124,58,237,0.03); }
 
         .stat-number {
           font-family: 'Syne', sans-serif;
@@ -395,7 +442,6 @@ export default function Home() {
           -webkit-text-fill-color: transparent;
           background-clip: text;
         }
-
         .stat-label {
           font-family: 'DM Mono', monospace;
           font-size: 0.7rem;
@@ -404,6 +450,38 @@ export default function Home() {
           color: var(--muted);
         }
 
+        /* ── SCROLL REVEAL ── */
+        .reveal {
+          opacity: 0;
+          transform: translateY(40px);
+          transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+        .reveal.from-left {
+          transform: translateX(-40px);
+        }
+        .reveal.from-right {
+          transform: translateX(40px);
+        }
+        .reveal.revealed {
+          opacity: 1;
+          transform: translate(0, 0);
+        }
+        /* staggered children */
+        .reveal-stagger > * {
+          opacity: 0;
+          transform: translateY(32px);
+          transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .reveal-stagger.revealed > *:nth-child(1) { opacity: 1; transform: none; transition-delay: 0s; }
+        .reveal-stagger.revealed > *:nth-child(2) { opacity: 1; transform: none; transition-delay: 0.1s; }
+        .reveal-stagger.revealed > *:nth-child(3) { opacity: 1; transform: none; transition-delay: 0.2s; }
+        .reveal-stagger.revealed > *:nth-child(4) { opacity: 1; transform: none; transition-delay: 0.3s; }
+        .reveal-stagger.revealed > *:nth-child(5) { opacity: 1; transform: none; transition-delay: 0.35s; }
+        .reveal-stagger.revealed > *:nth-child(6) { opacity: 1; transform: none; transition-delay: 0.4s; }
+        .reveal-stagger.revealed > *:nth-child(7) { opacity: 1; transform: none; transition-delay: 0.45s; }
+        .reveal-stagger.revealed > *:nth-child(8) { opacity: 1; transform: none; transition-delay: 0.5s; }
+
+        /* ── FEATURES ── */
         .features {
           position: relative;
           z-index: 2;
@@ -411,9 +489,7 @@ export default function Home() {
           max-width: 1200px;
           margin: 0 auto;
         }
-
         .section-header { margin-bottom: 4rem; }
-
         .section-tag {
           font-family: 'DM Mono', monospace;
           font-size: 0.7rem;
@@ -430,7 +506,6 @@ export default function Home() {
           width: 16px; height: 1px;
           background: var(--violet);
         }
-
         .section-title {
           font-family: 'Syne', sans-serif;
           font-weight: 800;
@@ -451,7 +526,6 @@ export default function Home() {
           background: var(--border);
           border: 1px solid var(--border);
         }
-
         .feature {
           background: var(--bg);
           padding: 2.5rem;
@@ -470,7 +544,6 @@ export default function Home() {
           transition: opacity 0.3s;
         }
         .feature:hover::before { opacity: 1; }
-
         .feature-num {
           font-family: 'DM Mono', monospace;
           font-size: 0.65rem;
@@ -478,6 +551,12 @@ export default function Home() {
           color: var(--violet-l);
           margin-bottom: 1.5rem;
           opacity: 0.6;
+        }
+        .feature-icon {
+          font-size: 1.4rem;
+          margin-bottom: 1rem;
+          color: var(--violet-l);
+          opacity: 0.7;
         }
 
         .feature-title {
@@ -487,7 +566,6 @@ export default function Home() {
           margin-bottom: 0.75rem;
           color: var(--text);
         }
-
         .feature-desc {
           font-family: 'DM Mono', monospace;
           font-size: 0.78rem;
@@ -495,6 +573,7 @@ export default function Home() {
           color: var(--muted);
         }
 
+        /* ── PRICING ── */
         .pricing {
           position: relative;
           z-index: 2;
@@ -502,7 +581,6 @@ export default function Home() {
           max-width: 1000px;
           margin: 0 auto;
         }
-
         .pricing-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -511,15 +589,13 @@ export default function Home() {
           border: 1px solid var(--border);
           margin-top: 4rem;
         }
-
         .plan {
           background: var(--bg);
           padding: 3rem;
           position: relative;
           overflow: hidden;
         }
-
-        .plan.featured { background: rgba(124,58,237,0.05); }
+        .plan.featured { background: rgba(124,58,237,0.04); }
         .plan.featured::before {
           content: '';
           position: absolute;
@@ -527,7 +603,6 @@ export default function Home() {
           height: 2px;
           background: linear-gradient(90deg, var(--violet), var(--violet-l), var(--gold));
         }
-
         .plan-badge {
           font-family: 'DM Mono', monospace;
           font-size: 0.65rem;
@@ -541,14 +616,12 @@ export default function Home() {
           display: inline-block;
           margin-bottom: 1.5rem;
         }
-
         .plan-name {
           font-family: 'Syne', sans-serif;
           font-weight: 800;
           font-size: 1.5rem;
           margin-bottom: 0.5rem;
         }
-
         .plan-price {
           font-family: 'Syne', sans-serif;
           font-weight: 800;
@@ -563,7 +636,6 @@ export default function Home() {
           color: var(--muted);
           font-family: 'DM Mono', monospace;
         }
-
         .plan-desc {
           font-family: 'DM Mono', monospace;
           font-size: 0.75rem;
@@ -571,7 +643,6 @@ export default function Home() {
           margin-bottom: 2rem;
           line-height: 1.6;
         }
-
         .plan-features {
           list-style: none;
           margin-bottom: 2.5rem;
@@ -579,7 +650,6 @@ export default function Home() {
           flex-direction: column;
           gap: 0.75rem;
         }
-
         .plan-features li {
           font-family: 'DM Mono', monospace;
           font-size: 0.78rem;
@@ -588,14 +658,11 @@ export default function Home() {
           align-items: center;
           gap: 0.75rem;
         }
-        .plan-features li::before {
-          content: '—';
-          color: var(--violet-l);
-          font-size: 0.65rem;
-        }
+        .plan-features li::before { content: '—'; color: var(--violet-l); font-size: 0.65rem; }
         .plan-features li.active { color: var(--text); }
         .plan-features li.inactive { opacity: 0.35; }
 
+        /* ── CTA ── */
         .cta-section {
           position: relative;
           z-index: 2;
@@ -603,7 +670,6 @@ export default function Home() {
           text-align: center;
           border-top: 1px solid var(--border);
         }
-
         .cta-title {
           font-family: 'Syne', sans-serif;
           font-weight: 800;
@@ -621,6 +687,7 @@ export default function Home() {
           background-clip: text;
         }
 
+        /* ── FOOTER ── */
         footer {
           position: relative;
           z-index: 2;
@@ -630,7 +697,6 @@ export default function Home() {
           align-items: center;
           justify-content: space-between;
         }
-
         .footer-text {
           font-family: 'DM Mono', monospace;
           font-size: 0.7rem;
@@ -642,7 +708,6 @@ export default function Home() {
           from { opacity: 0; transform: translateY(20px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-
         @keyframes pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
           50%       { opacity: 0.5; transform: scale(0.8); }
@@ -650,10 +715,10 @@ export default function Home() {
 
         @media (max-width: 768px) {
           nav { padding: 1rem 1.5rem; }
-          .nav-links { display: none; }
+          .nav-links, .nav-signin { display: none; }
           .features-grid { grid-template-columns: 1fr; }
           .pricing-grid { grid-template-columns: 1fr; }
-          .stats { grid-template-columns: 1fr; }
+          .stats { grid-template-columns: repeat(2, 1fr); }
           .features, .pricing { padding: 4rem 1.5rem; }
           footer { flex-direction: column; gap: 1rem; text-align: center; }
           .ticker-card { flex-wrap: wrap; gap: 0.75rem; }
@@ -664,31 +729,34 @@ export default function Home() {
       <div className="cursor-ring" style={{ left: mousePos.x - 16, top: mousePos.y - 16 }} />
       <div className="ambient" style={{ left: mousePos.x, top: mousePos.y }} />
 
+      {/* ── NAV ── */}
       <nav className={scrollY > 20 ? 'scrolled' : ''}>
         <a href="/" className="logo">
           <div className="s-mark">
-            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <line x1="18" y1="2" x2="18" y2="34" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round" opacity="0.4"/>
-              <path d="M26 11c0-3.866-3.582-7-8-7s-8 3.134-8 7c0 3.866 3.582 7 8 7s8 3.134 8 7c0 3.866-3.582 7-8 7s-8-3.134-8-7" stroke="url(#sg)" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
-              <rect x="14" y="6" width="8" height="10" rx="1" fill="rgba(124,58,237,0.25)" stroke="#a855f7" strokeWidth="0.75"/>
-              <rect x="14" y="20" width="8" height="10" rx="1" fill="rgba(217,119,6,0.2)" stroke="#f59e0b" strokeWidth="0.75"/>
-              <defs>
-                <linearGradient id="sg" x1="10" y1="4" x2="26" y2="32" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#a855f7"/>
-                  <stop offset="100%" stopColor="#f59e0b"/>
-                </linearGradient>
-              </defs>
-            </svg>
+            <img src="/exchange-logo.png" alt="Spotex" width="38" height="38" style={{objectFit:'contain'}}/>
           </div>
-          <span className="logo-text">SPOTEX <span>CORE</span></span>
+          <div className="logo-text">
+            <span className="logo-name">SPOTEX</span>
+            <span className="logo-sub-wrap">
+              <span className="logo-rule"/>
+              <span className="logo-sub">CORE</span>
+              <span className="logo-rule"/>
+            </span>
+          </div>
         </a>
+
         <ul className="nav-links">
           <li><a href="#features">Engine</a></li>
           <li><a href="#pricing">Pricing</a></li>
         </ul>
-        <a href="/auth/signup" className="nav-cta">Get Access</a>
+
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <a href="/auth/login" className="nav-signin">Sign In</a>
+          <a href="/auth/signup" className="nav-cta">Get Access</a>
+        </div>
       </nav>
 
+      {/* ── HERO ── */}
       <section className="hero" ref={heroRef}>
         <div className="hero-tag">Smart Money Detection Engine</div>
         <h1 className="hero-title">
@@ -723,7 +791,11 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="stats">
+      {/* ── STATS — 4 columns now ── */}
+      <div
+        className={`stats reveal-stagger${r('stats') ? ' revealed' : ''}`}
+        data-reveal-id="stats"
+      >
         <div className="stat">
           <div className="stat-number accent">50+</div>
           <div className="stat-label">Pairs Monitored</div>
@@ -736,24 +808,36 @@ export default function Home() {
           <div className="stat-number accent">24/7</div>
           <div className="stat-label">Always Running</div>
         </div>
+        <div className="stat">
+          <div className="stat-number">&lt;1s</div>
+          <div className="stat-label">Alert Speed</div>
+        </div>
       </div>
 
+      {/* ── FEATURES ── */}
       <section className="features" id="features">
-        <div className="section-header">
+        <div
+          className={`section-header reveal${r('feat-hdr') ? ' revealed' : ''}`}
+          data-reveal-id="feat-hdr"
+        >
           <div className="section-tag">The Engine</div>
           <h2 className="section-title">Built on <em>institutional</em><br />price structure</h2>
         </div>
-        <div className="features-grid">
+        <div
+          className={`features-grid reveal-stagger${r('feat-grid') ? ' revealed' : ''}`}
+          data-reveal-id="feat-grid"
+        >
           {[
-            { num: '01', title: 'Break of Structure', desc: 'Detects bullish and bearish BOS across 5m, 15m, 1H and 4H simultaneously. No lagging indicators — pure price action.' },
-            { num: '02', title: 'Order Block Detection', desc: 'Identifies 1-candle and 2-candle order blocks with Fair Value Gap confirmation. Knows when price returns to mitigate.' },
-            { num: '03', title: 'Multi-Timeframe Logic', desc: 'Higher timeframe BOS cascades down to lower timeframes automatically. See the full picture, not just one slice.' },
-            { num: '04', title: 'Instant Alerts', desc: 'Telegram notifications the moment a signal fires. No delayed data. No missed setups. Your phone knows first.' },
-            { num: '05', title: 'Personalised Dashboard', desc: 'Your pairs, your timeframes, your view. Toggle symbols on and off. Favourite the setups you care about.' },
-            { num: '06', title: 'Always On', desc: 'Runs on cloud infrastructure 24 hours a day. No PC required. No manual execution. Just signals.' },
+            { num: '01', icon: '◈', title: 'Break of Structure', desc: 'Detects bullish and bearish BOS across 5m, 15m, 1H and 4H simultaneously. No lagging indicators — pure price action.' },
+            { num: '02', icon: '⬡', title: 'Order Block Detection', desc: 'Identifies 1-candle and 2-candle order blocks with Fair Value Gap confirmation. Knows when price returns to mitigate.' },
+            { num: '03', icon: '◎', title: 'Multi-Timeframe Logic', desc: 'Higher timeframe BOS cascades down to lower timeframes automatically. See the full picture, not just one slice.' },
+            { num: '04', icon: '★', title: 'Instant Alerts', desc: 'Telegram notifications the moment a signal fires. No delayed data. No missed setups. Your phone knows first.' },
+            { num: '05', icon: '⊞', title: 'Personalised Dashboard', desc: 'Your pairs, your timeframes, your view. Toggle symbols on and off. Favourite the setups you care about.' },
+            { num: '06', icon: '◉', title: 'Always On', desc: 'Runs on cloud infrastructure 24 hours a day. No PC required. No manual execution. Just signals.' },
           ].map((f, i) => (
             <div key={i} className="feature">
               <div className="feature-num">{f.num}</div>
+              <div className="feature-icon">{f.icon}</div>
               <div className="feature-title">{f.title}</div>
               <div className="feature-desc">{f.desc}</div>
             </div>
@@ -761,12 +845,19 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── PRICING ── */}
       <section className="pricing" id="pricing">
-        <div className="section-header">
+        <div
+          className={`section-header reveal${r('price-hdr') ? ' revealed' : ''}`}
+          data-reveal-id="price-hdr"
+        >
           <div className="section-tag">Pricing</div>
           <h2 className="section-title">Start <em>free.</em><br />Upgrade when ready.</h2>
         </div>
-        <div className="pricing-grid">
+        <div
+          className={`pricing-grid reveal-stagger${r('price-grid') ? ' revealed' : ''}`}
+          data-reveal-id="price-grid"
+        >
           <div className="plan">
             <div className="plan-name">Core</div>
             <div className="plan-price">$0<span>/mo</span></div>
@@ -803,13 +894,19 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── CTA ── */}
       <section className="cta-section">
-        <h2 className="cta-title">
-          The market does not wait.<br />
-          <em>Neither should you.</em>
-        </h2>
-        <div style={{marginTop:'2.5rem'}}>
-          <a href="/auth/signup" className="btn-primary">Start Your 3 Months Free</a>
+        <div
+          className={`reveal${r('cta') ? ' revealed' : ''}`}
+          data-reveal-id="cta"
+        >
+          <h2 className="cta-title">
+            The market does not wait.<br />
+            <em>Neither should you.</em>
+          </h2>
+          <div style={{marginTop:'2.5rem'}}>
+            <a href="/auth/signup" className="btn-primary">Start Your 3 Months Free</a>
+          </div>
         </div>
       </section>
 
