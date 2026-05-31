@@ -328,9 +328,8 @@ export default function Home() {
           cursor: none;
           transition: all 0.3s;
           display: inline-block;
-          box-shadow: 0 0 20px rgba(168,85,247,0.5);
         }
-        .btn-primary:hover { background: var(--violet-l); transform: translateY(-1px); box-shadow: 0 0 30px rgba(168,85,247,0.8); }
+        .btn-primary:hover { background: var(--violet-l); transform: translateY(-1px); }
 
         .btn-ghost {
           color: var(--muted);
@@ -345,9 +344,8 @@ export default function Home() {
           transition: all 0.3s;
           cursor: none;
           display: inline-block;
-          box-shadow: 0 0 15px rgba(139,92,246,0.3);
         }
-        .btn-ghost:hover { color: var(--text); border-color: rgba(139,92,246,0.3); box-shadow: 0 0 25px rgba(168,85,247,0.6); }
+        .btn-ghost:hover { color: var(--text); border-color: rgba(139,92,246,0.3); background: rgba(124,58,237,0.12); }
 
         .ticker {
           margin-top: 5rem;
