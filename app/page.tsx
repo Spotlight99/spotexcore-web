@@ -731,7 +731,18 @@ export default function Home() {
       <nav className={scrollY > 20 ? 'scrolled' : ''}>
         <a href="/" className="logo">
           <div className="s-mark">
-            <img src="/exchange-logo.png" alt="Spotex" width="38" height="38" style={{objectFit:'contain'}}/>
+            <img 
+              src="/exchange-logo.png" 
+              alt="Spotex" 
+              width="38" 
+              height="38" 
+              style={{
+                objectFit: 'cover',
+                borderRadius: '50%',
+                border: '1px solid rgba(168,85,247,0.3)',
+                background: '#0a0d16'
+              }}
+            />
           </div>
           <div className="logo-text">
             <span className="logo-name">SPOTEX</span>
